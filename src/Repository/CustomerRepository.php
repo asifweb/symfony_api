@@ -4,6 +4,8 @@ namespace App\Repository;
 
 use App\Entity\Customer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -14,9 +16,36 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class CustomerRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    private $manager;
+    public function __construct(ManagerRegistry $registry, EntityManagerInterface $entityManagerInterface)
     {
         parent::__construct($registry, Customer::class);
+        $this->manager = $entityManagerInterface;
+    }
+
+    public function saveCustomer($firstName, $lastName, $email, $phoneNumber)
+    {
+        $newCustomer = new Customer();
+        $newCustomer->setFirstName($firstName);
+        $newCustomer->setLastName($lastName);
+        $newCustomer->setEmail($email);
+        $newCustomer->setPhoneNumber($phoneNumber);
+        $this->manager->persist($newCustomer);
+        $this->manager->flush();
+    }
+    public function isEmailExists($email)
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.email = :email')
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+    public function updateCustomer(Customer $customer): Customer
+    {
+        $this->manager->persist($customer);
+        $this->manager->flush();
+        return $customer;
     }
 
     // /**
